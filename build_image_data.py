@@ -10,21 +10,21 @@ import threading
 
 
 import numpy as np
-import tensorflow as tf
+from tensorflow import compat as cm
 
-tf.app.flags.DEFINE_string('train_directory', './',
+cm.v1.app.flags.DEFINE_string('train_directory', '..\\Dataset256\\',
                            'Training data directory')
-tf.app.flags.DEFINE_string('validation_directory', './',
+cm.v1.app.flags.DEFINE_string('validation_directory', '..\\Dataset256\\',
                            'Validation data directory')
-tf.app.flags.DEFINE_string('output_directory', './',
+cm.v1.app.flags.DEFINE_string('output_directory', '..\\Dataset\\',
                            'Output data directory')
 
-tf.app.flags.DEFINE_integer('train_shards', 2,
+cm.v1.app.flags.DEFINE_integer('train_shards', 2,
                             'Number of shards in training TFRecord files.')
-tf.app.flags.DEFINE_integer('validation_shards', 0,
+cm.v1.app.flags.DEFINE_integer('validation_shards', 0,
                             'Number of shards in validation TFRecord files.')
 
-tf.app.flags.DEFINE_integer('num_threads', 2,
+cm.v1.app.flags.DEFINE_integer('num_threads', 2,
                             'Number of threads to preprocess the images.')
 
 # The labels file contains a list of valid labels are held in this file.
@@ -33,22 +33,22 @@ tf.app.flags.DEFINE_integer('num_threads', 2,
 #   benign
 # where each line corresponds to a label. We map each label contained in
 # the file to an integer corresponding to the line number starting from 0.
-tf.app.flags.DEFINE_string('labels_file', './label.txt', 'Labels file')
+cm.v1.app.flags.DEFINE_string('labels_file', './label.txt', 'Labels file')
 
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = cm.v1.app.flags.FLAGS
 
 
 def _int64_feature(value):
   """Wrapper for inserting int64 features into Example proto."""
   if not isinstance(value, list):
     value = [value]
-  return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
+  return cm.v1.train.Feature(int64_list=cm.v1.train.Int64List(value=value))
 
 
 def _bytes_feature(value):
   """Wrapper for inserting bytes features into Example proto."""
-  return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+  return cm.v1.train.Feature(bytes_list=cm.v1.train.BytesList(value=[value]))
 
 
 def _convert_to_example(filename, image_buffer, label, text, height, width):
@@ -68,16 +68,16 @@ def _convert_to_example(filename, image_buffer, label, text, height, width):
   channels = 3
   image_format = 'JPEG'
 
-  example = tf.train.Example(features=tf.train.Features(feature={
+  example = cm.v1.train.Example(features=cm.v1.train.Features(feature={
       'image/height': _int64_feature(height),
       'image/width': _int64_feature(width),
-      'image/colorspace': _bytes_feature(tf.compat.as_bytes(colorspace)),
+      'image/colorspace': _bytes_feature(cm.v1.compat.as_bytes(colorspace)),
       'image/channels': _int64_feature(channels),
       'image/class/label': _int64_feature(label),
-      'image/class/text': _bytes_feature(tf.compat.as_bytes(text)),
-      'image/format': _bytes_feature(tf.compat.as_bytes(image_format)),
-      'image/filename': _bytes_feature(tf.compat.as_bytes(os.path.basename(filename))),
-      'image/encoded': _bytes_feature(tf.compat.as_bytes(image_buffer))}))
+      'image/class/text': _bytes_feature(cm.v1.compat.as_bytes(text)),
+      'image/format': _bytes_feature(cm.v1.compat.as_bytes(image_format)),
+      'image/filename': _bytes_feature(cm.v1.compat.as_bytes(os.path.basename(filename))),
+      'image/encoded': _bytes_feature(cm.v1.compat.as_bytes(image_buffer))}))
   return example
 
 
@@ -86,16 +86,16 @@ class ImageCoder(object):
 
   def __init__(self):
     # Create a single Session to run all image coding calls.
-    self._sess = tf.Session()
+    self._sess = cm.v1.Session()
 
     # Initializes function that converts PNG to JPEG data.
-    self._png_data = tf.placeholder(dtype=tf.string)
-    image = tf.image.decode_png(self._png_data, channels=3)
-    self._png_to_jpeg = tf.image.encode_jpeg(image, format='rgb', quality=100)
+    self._png_data = cm.v1.placeholder(dtype=cm.v1.string)
+    image = cm.v1.image.decode_png(self._png_data, channels=3)
+    self._png_to_jpeg = cm.v1.image.encode_jpeg(image, format='rgb', quality=100)
 
     # Initializes function that decodes RGB JPEG data.
-    self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
-    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
+    self._decode_jpeg_data = cm.v1.placeholder(dtype=cm.v1.string)
+    self._decode_jpeg = cm.v1.image.decode_jpeg(self._decode_jpeg_data, channels=3)
 
   def png_to_jpeg(self, image_data):
     return self._sess.run(self._png_to_jpeg,
@@ -118,7 +118,7 @@ def _process_image(filename, coder):
   ## Process a single image file.
   
   # Read the image file.
-  with tf.gfile.FastGFile(filename, 'rb') as f:
+  with cm.v1.gfile.FastGFile(filename, 'rb') as f:
     image_data = f.read()
 
   # Convert PNG to JPEG
@@ -169,7 +169,7 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
     shard = thread_index * num_shards_per_batch + s
     output_filename = '%s-%.5d-of-%.5d.tfrecord' % (name, shard, num_shards)
     output_file = os.path.join(FLAGS.output_directory, output_filename)
-    writer = tf.python_io.TFRecordWriter(output_file)
+    writer = cm.v1.python_io.TFRecordWriter(output_file)
 
     shard_counter = 0
     files_in_shard = np.arange(shard_ranges[s], shard_ranges[s + 1], dtype=int)
@@ -224,7 +224,7 @@ def _process_image_files(name, filenames, texts, labels, num_shards):
   sys.stdout.flush()
 
   # Create a mechanism for monitoring when all threads are finished
-  coord = tf.train.Coordinator()
+  coord = cm.v1.train.Coordinator()
 
   # Create a generic TensorFlow-based utility for converting all image codings.
   coder = ImageCoder()
@@ -252,7 +252,7 @@ def _find_image_files(data_dir, labels_file):
     labels: list of integer; each integer identifies the ground truth.
   """
   print('Determining list of input files and labels from %s.' % data_dir)
-  unique_labels = [l.strip() for l in tf.gfile.FastGFile(
+  unique_labels = [l.strip() for l in cm.v1.gfile.FastGFile(
       labels_file, 'r').readlines()]
 
   labels = []
@@ -265,7 +265,7 @@ def _find_image_files(data_dir, labels_file):
   # Construct the list of JPEG files and labels.
   for text in unique_labels:
     jpeg_file_path = '%s/%s/*' % (data_dir, text)
-    matching_files = tf.gfile.Glob(jpeg_file_path)
+    matching_files = cm.v1.gfile.Glob(jpeg_file_path)
 
     labels.extend([label_index] * len(matching_files))
     texts.extend([text] * len(matching_files))
@@ -317,4 +317,5 @@ def main(unused_argv):
 
 
 if __name__ == '__main__':
-  tf.app.run()
+	cm.v1.disable_eager_execution()
+	cm.v1.app.run()
