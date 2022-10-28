@@ -12,9 +12,9 @@ import threading
 import numpy as np
 from tensorflow import compat as cm
 
-cm.v1.app.flags.DEFINE_string('train_directory', '..\\Dataset256\\',
+cm.v1.app.flags.DEFINE_string('train_directory', '..\\Dataset\\Train\\',
                            'Training data directory')
-cm.v1.app.flags.DEFINE_string('validation_directory', '..\\Dataset256\\',
+cm.v1.app.flags.DEFINE_string('validation_directory', '..\\Dataset\\Validation\\',
                            'Validation data directory')
 cm.v1.app.flags.DEFINE_string('output_directory', '..\\Dataset\\',
                            'Output data directory')

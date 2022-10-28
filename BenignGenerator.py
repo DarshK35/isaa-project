@@ -11,11 +11,11 @@ def recursive_walk(folder):
 				shutil.copy(folderName + "/" + filename, dir_dst)
 
 unallowed = ['desktop.ini','WindowsApps']
-l = os.listdir("D:\\Apps\\")
-dir_src = ("D:\\Apps\\")
+l = os.listdir("C:\\Program Files\\")
+dir_src = ("C:\\Program Files\\")
 dir_dst = ("D:\\Benign")
 for i in l:
 	if i in unallowed:
 		continue
-	print('D:\\Apps\\' + i)
-	recursive_walk('D:\\Apps\\' + i)
+	print('C:\\Program Files\\' + i)
+	recursive_walk('C:\\Program Files\\' + i)
